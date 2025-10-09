@@ -210,16 +210,146 @@ hooks={"PreToolUse": [...]}
 
 ---
 
-## 🚀 다음 분석 단계
+## 📚 심층 분석 문서
 
-1. **_architecture.md**: 전체 아키텍처 심층 분석
+### 기존 분석 (4개 파일)
+1. **_architecture.md**: 전체 아키텍처 개요
 2. **types.py.md**: 타입 시스템 상세 분석
-3. **client.py.md**: ClaudeSDKClient 구조
-4. **query.py.md**: query() 함수 구현
-5. **_internal/transport/subprocess_cli.py.md**: IPC 메커니즘
-6. **_insights.md**: 발견한 패턴 및 개선점
+3. **client.py.md**: ClaudeSDKClient 구조 (Public API)
+4. **query.py.md**: query() 함수 구현 (Public API)
+5. **subprocess_cli.py.md**: Transport 레이어 (IPC)
+
+### 신규 추가 분석 (2개 파일)
+6. **_internal_implementation.md**: 내부 구현 로직 완전 분석
+   - InternalClient (옵션 검증, 리소스 조립)
+   - Query (제어 프로토콜, 훅 라우팅, MCP 브리징)
+   - MessageParser (타입 변환)
+   - Error Hierarchy (에러 타입 계층)
+   - 전체 실행 흐름 (단방향/양방향 모드)
+
+7. **_sdk_mcp_hooks.md**: 확장 메커니즘 심층 분석
+   - SDK MCP 서버 (In-process 도구 제공)
+   - 훅 시스템 (에이전트 루프 제어)
+   - @tool 데코레이터 구현
+   - create_sdk_mcp_server() 상세
+   - 훅 등록 및 실행 메커니즘
+   - 사용 예제 및 패턴
+
+---
+
+## 🔄 분석 완료도
+
+### 완료된 분석 (100%)
+- ✅ Public API 레이어 (query, ClaudeSDKClient, types)
+- ✅ Internal Implementation (_internal/client, _internal/query)
+- ✅ Message Parsing (_internal/message_parser)
+- ✅ Error System (_errors)
+- ✅ Transport Layer (subprocess_cli)
+- ✅ SDK MCP Server (__init__.py의 tool, create_sdk_mcp_server)
+- ✅ Hooks System (Query의 훅 라우팅)
+
+### 분석 범위
+- **총 Python 파일**: 12개
+- **분석된 파일**: 9개 (핵심 파일)
+- **코드 라인**: ~1,200 LOC (Public + Internal)
+- **분석 문서**: 7개 (+ 1 insights)
+
+---
+
+## 🎯 핵심 발견 사항 (업데이트)
+
+### 6. **제어 프로토콜의 양방향 통신**
+- SDK ↔ CLI 간 JSONRPC 기반 제어 프로토콜
+- `control_request`/`control_response` 타입으로 분리
+- 비동기 요청-응답 패턴 (anyio.Event 사용)
+- 3가지 제어 요청 타입:
+  - `can_use_tool`: 도구 권한 확인
+  - `hook_callback`: 훅 실행
+  - `mcp_message`: SDK MCP 서버 호출
+
+### 7. **SDK MCP 서버의 독창성**
+- **External MCP**: 별도 프로세스 (stdio IPC)
+- **SDK MCP**: 같은 프로세스 (함수 호출)
+- 장점: 성능 (IPC 없음), 상태 공유, 단일 배포
+- 제약: Python MCP SDK의 Transport 부재 → 수동 라우팅
+- TypeScript는 `server.connect(transport)`로 자동 처리
+
+### 8. **훅 시스템의 설계**
+- 5가지 이벤트: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, PrePromptCaching
+- Matcher 기반 필터링 (도구 이름 또는 None=모든 도구)
+- 초기화 시 콜백 ID 할당 (`hook_0`, `hook_1`, ...)
+- CLI → SDK 역방향 호출 (제어 프로토콜)
+- 반환값으로 동작 제어 (deny, updatedInput, overrideResult 등)
+
+### 9. **옵션 검증의 복잡성**
+- `can_use_tool` 사용 시 스트리밍 모드 강제
+- `can_use_tool`과 `permission_prompt_tool_name` 상호 배타
+- 자동으로 `permission_prompt_tool_name="stdio"` 설정
+- TypeScript SDK와 동일한 검증 로직 (일관성)
+
+### 10. **Python vs TypeScript 차이 대응**
+| 기능 | TypeScript | Python | 대응 방법 |
+|------|------------|--------|----------|
+| MCP Transport | server.connect(transport) | 없음 | 수동 JSONRPC 라우팅 |
+| 타입 시스템 | interface | TypedDict | mypy strict 모드 |
+| 비동기 라이브러리 | 단일 | anyio (asyncio+trio) | 추상화 레이어 |
+| 패턴 매칭 | switch (제한적) | match (강력) | 가독성 향상 |
+
+---
+
+## 💡 배울 점 (업데이트)
+
+### 5. 제어 프로토콜 설계
+- 일반 메시지와 제어 메시지 분리
+- 요청 ID 기반 비동기 응답 매칭
+- 타임아웃 처리 (60초 기본)
+- 에러 전파 (Exception 객체 저장)
+
+### 6. In-Process MCP 서버 최적화
+- IPC 오버헤드 제거
+- 애플리케이션 상태 직접 접근
+- 단일 프로세스 배포
+- 동적 도구 등록 가능
+
+### 7. 훅 시스템 패턴
+- Callback Registry (ID → 함수 매핑)
+- Matcher 기반 라우팅
+- 체인 실행 (여러 훅 순차)
+- 선언적 구성 (ClaudeAgentOptions)
+
+### 8. 타입 안전성 vs 런타임 유연성
+- TypedDict로 타입 힌트 제공
+- 런타임에는 dict로 동작
+- parse_message()로 런타임 검증
+- mypy로 정적 검증
+
+---
+
+## 🔧 설계 패턴 (업데이트)
+
+### 6. **Request-Response Pattern**
+- 비동기 요청-응답 매칭 (anyio.Event)
+
+### 7. **Bridge Pattern**
+- Python MCP Server ↔ JSONRPC (Query._handle_sdk_mcp_request)
+
+### 8. **Registry Pattern**
+- Callback ID → 함수 매핑 (self.hook_callbacks)
+
+### 9. **Chain of Responsibility**
+- 훅 체인 실행 (조기 종료 지원)
+
+---
+
+## 🚀 추가 분석 가능 영역
+
+1. **_insights.md**: 전체 프로젝트에서 배운 패턴 정리
+2. **테스트 분석**: 유닛 테스트 + E2E 테스트 구조
+3. **예제 분석**: 11개 예제의 사용 패턴
+4. **성능 프로파일링**: 병목 지점 식별
 
 ---
 
 **분석 작성**: Claude Code
 **분석 프레임워크**: Operability, Simplicity, Evolvability
+**최종 업데이트**: 2025-01-09
