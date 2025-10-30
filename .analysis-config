@@ -1,0 +1,110 @@
+# Open Source Analysis Configuration
+# 오픈소스 분석 설정 파일
+
+## Default Methodology
+# 기본 분석 방법론
+methodology: "problem-driven"
+methodology_file: "ANALYSIS_METHODOLOGY.md"
+
+## Analysis Approach
+# 분석 접근 방식
+approach: |
+  모든 코드 분석 시 "문제 → 고민 → 해결" 프레임워크를 따른다.
+
+  핵심 원칙:
+  - "이 코드가 무엇을 하는가?" (X)
+  - "왜 이런 선택을 했는가?" (O)
+
+  필수 질문:
+  1. 어떤 문제를 해결하려고 하는가?
+  2. 어떤 선택지들이 있었는가?
+  3. 왜 이 방법을 선택했는가?
+  4. 트레이드오프는 무엇인가?
+
+## Analysis Levels
+# 분석 레벨별 포커스
+levels:
+  - folder_structure: "왜 이렇게 폴더를 나눴는가? 의존성 관리"
+  - class_design: "왜 여러 클래스로 분리했는가? 책임 분리"
+  - function_design: "왜 이런 시그니처인가? 동기 vs 비동기"
+  - design_patterns: "왜 이 패턴인가? 다른 선택지는?"
+  - architecture: "왜 이런 계층 구조인가? 확장성과 유지보수성"
+
+## Documentation Template
+# 문서 템플릿
+template: |
+  # <Component Name>
+
+  ## 해결하려는 문제
+  - 문제 상황
+  - 누구를 위한 해결책인가?
+
+  ## 고민했던 선택지
+  ### 선택지 1: <이름>
+  - 장점/단점
+  - 왜 선택하지 않았는가
+
+  ### 선택지 2 (최종): <이름>
+  - 장점/단점
+  - 왜 선택했는가
+
+  ## 최종 해결책
+  - 구조 (코드/다이어그램)
+  - 핵심 아이디어
+  - 트레이드오프
+
+  ## 실제 코드 예시
+  ```
+  <예시>
+  ```
+
+  ## 배운 점
+  - 문제 해결 접근법
+  - 비슷한 상황에 적용 가능한 인사이트
+
+## Analysis Process
+# 분석 프로세스 (6단계)
+process:
+  step1: "프로젝트 탐색 - tree, wc -l로 구조 파악"
+  step2: "입구 찾기 - README 예제, __init__.py, 주요 API"
+  step3: "핵심 흐름 추적 - 하나의 기능 끝까지 따라가기"
+  step4: "'왜' 찾기 - 주석, commit, 이슈, 테스트 읽기"
+  step5: "대안 생각하기 - 나라면 어떻게? 더 간단한 방법은?"
+  step6: "문서화 - '문제→고민→해결' 템플릿으로 작성"
+
+## Analysis Tips
+# 분석 팁
+tips:
+  - "왜"를 3번 물어보기 (진짜 문제 찾기)
+  - 주석보다 코드 구조 보기
+  - 테스트로 의도 파악하기
+  - 에러 처리로 고민 파악하기
+  - 설정(Config)으로 트레이드오프 파악하기
+
+## Quality Checklist
+# 품질 체크리스트
+checklist:
+  - "문제: 이 코드가 없었다면 어떤 불편함?"
+  - "대안: 다른 방법은? 각 장단점은?"
+  - "선택: 왜 이 방법을 선택했는가?"
+  - "트레이드오프: 무엇을 얻고 무엇을 포기했는가?"
+  - "적용: 비슷한 상황에서 이 패턴을 사용할 수 있는가?"
+
+## Project Structure
+# 프로젝트 구조
+structure: |
+  projects/
+  └── <project-name>/
+      ├── original/           # git clone한 원본 소스
+      └── analysis/           # 분석 문서들
+          ├── 00_SUMMARY.md   # 전체 요약
+          ├── <component>.md  # 컴포넌트별 분석
+          └── ...
+
+## Notes
+# 주의사항
+notes: |
+  - 코드를 "읽지" 말고 "질문"하기
+  - "What"이 아니라 "Why"에 집중
+  - 개발자의 고민을 따라가기
+  - 완벽한 해결책은 없다 - 모든 선택은 트레이드오프
